@@ -13,10 +13,7 @@ import (
 	"syscall"
 )
 
-var (
-	discordToken string
-	botLink      *player.Bot
-)
+var discordToken string
 
 const guildId = "935103396304785468"
 
@@ -44,9 +41,10 @@ func main() {
 		return
 	}
 
-	botLink = &player.Bot{
+	bot := &player.Bot{
 		Link:           dgolink.New(session, lavalink.WithPlugins(spotify.New())),
 		PlayerManagers: map[string]*player.Manager{},
+		Session:        session,
 	}
 
 	session.AddHandler(ready)
@@ -54,7 +52,7 @@ func main() {
 	session.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 		if interaction.User == nil {
 			if handler, ok := CommandHandlers[interaction.ApplicationCommandData().Name]; ok {
-				handler(session, interaction)
+				handler(bot, interaction)
 			}
 		}
 	})
@@ -65,7 +63,7 @@ func main() {
 		return
 	}
 
-	botLink.RegisterNodes()
+	bot.RegisterNodes()
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)

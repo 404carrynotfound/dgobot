@@ -16,6 +16,7 @@ import (
 type Bot struct {
 	Link           *dgolink.Link
 	PlayerManagers map[string]*Manager
+	Session        *discordgo.Session
 }
 
 func (b *Bot) RegisterNodes() {

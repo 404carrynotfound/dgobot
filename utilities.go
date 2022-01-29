@@ -35,36 +35,8 @@ func ready(session *discordgo.Session, _ *discordgo.Ready) {
 	if err != nil {
 		fmt.Printf("Can't set status, %s\n", err)
 	}
-
-	// Checks for unused commands and deletes them
-	if commands, err := session.ApplicationCommands(session.State.User.ID, guildId); err == nil {
-		found := false
-
-		for _, l := range Commands {
-			found = false
-
-			for _, o := range commands {
-				// We compare every online command with the ones locally stored, to find if a command with the same name exists
-				if l.Name == o.Name {
-					_, err = session.ApplicationCommandCreate(session.State.User.ID, guildId, l)
-					if err != nil {
-						fmt.Printf("Cannot create '%s' command: %s\n", l.Name, err)
-					}
-
-					found = true
-					break
-				}
-
-			}
-			// If we didn't found a match for the locally stored command, it means the command is new. We register it
-			if !found {
-				fmt.Printf("Registering new command %s\n", l.Name)
-
-				_, err = session.ApplicationCommandCreate(session.State.User.ID, guildId, l)
-				if err != nil {
-					fmt.Printf("Cannot create '%s' command: %s\n", l.Name, err)
-				}
-			}
-		}
+	_, err = session.ApplicationCommandBulkOverwrite(session.State.User.ID, guildId, Commands)
+	if err != nil {
+		fmt.Printf("Error while loading slash commands: %s\n", err)
 	}
 }
