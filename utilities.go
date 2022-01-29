@@ -1,16 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/DisgoOrg/disgolink/dgolink"
-	"github.com/DisgoOrg/disgolink/lavalink"
-	"github.com/DisgoOrg/snowflake"
 	"github.com/bwmarrin/discordgo"
 	"net/url"
-	"os"
 	"strconv"
-	"time"
 )
 
 // Finds user current voice channel
@@ -29,55 +23,48 @@ func findChannel(session *discordgo.Session, interaction *discordgo.Interaction)
 	return ""
 }
 
-func sendEmbed(session *discordgo.Session, embed *discordgo.MessageEmbed, interaction *discordgo.Interaction) {
-	sliceEmbed := []*discordgo.MessageEmbed{embed}
-	err := session.InteractionRespond(interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
-	if err != nil {
-		fmt.Printf("InteractionRespond failed: %s\n", err)
-		return
-	}
-}
-
-// Sends and delete after three second an embed in a given channel
-func sendAndDeleteEmbedInteraction(session *discordgo.Session, embed *discordgo.MessageEmbed, interaction *discordgo.Interaction, wait time.Duration) {
-	sendEmbed(session, embed, interaction)
-
-	time.Sleep(wait)
-
-	err := session.InteractionResponseDelete(session.State.User.ID, interaction)
-	if err != nil {
-		fmt.Printf("InteractionResponseDelete failed: %s\n", err)
-		return
-	}
-}
-
 func validURL(value string) bool {
 	_, err := url.ParseRequestURI(value)
 	return err == nil
 }
 
-func play(s *discordgo.Session, link *dgolink.Link, guildID, voiceChannelID, channelID string, track lavalink.AudioTrack) {
-	if err := s.ChannelVoiceJoinManual(guildID, voiceChannelID, false, false); err != nil {
-		_, _ = s.ChannelMessageSend(channelID, "error while joining voice channel: "+err.Error())
-		return
-	}
-	if err := link.Player(snowflake.Snowflake(guildID)).Play(track); err != nil {
-		_, _ = s.ChannelMessageSend(channelID, "error while playing track: "+err.Error())
-		return
-	}
-	_, _ = s.ChannelMessageSend(channelID, "Playing: "+track.Info().Title())
-}
-
-func (b *Bot) registerNodes() {
-	secure, _ := strconv.ParseBool(os.Getenv("LAVALINK_SECURE"))
-	_, err := b.Link.AddNode(context.TODO(), lavalink.NodeConfig{
-		Name:     "test",
-		Host:     os.Getenv("LAVALINK_HOST"),
-		Port:     os.Getenv("LAVALINK_PORT"),
-		Password: os.Getenv("LAVALINK_PASSWORD"),
-		Secure:   secure,
-	})
+// Sets bot status and initialize all application commands
+func ready(session *discordgo.Session, _ *discordgo.Ready) {
+	// Set the playing status.
+	err := session.UpdateGameStatus(0, "Serving "+strconv.Itoa(len(session.State.Guilds))+" guilds!")
 	if err != nil {
-		fmt.Printf("Error with registreing lavalink%s\n", err)
+		fmt.Printf("Can't set status, %session\n", err)
+	}
+
+	// Checks for unused commands and deletes them
+	if commands, err := session.ApplicationCommands(session.State.User.ID, guildId); err == nil {
+		found := false
+
+		for _, l := range Commands {
+			found = false
+
+			for _, o := range commands {
+				// We compare every online command with the ones locally stored, to find if a command with the same name exists
+				if l.Name == o.Name {
+					_, err = session.ApplicationCommandCreate(session.State.User.ID, guildId, l)
+					if err != nil {
+						fmt.Printf("Cannot create '%session' command: %session\n", l.Name, err)
+					}
+
+					found = true
+					break
+				}
+
+			}
+			// If we didn't found a match for the locally stored command, it means the command is new. We register it
+			if !found {
+				fmt.Printf("Registering new command %session\n", l.Name)
+
+				_, err = session.ApplicationCommandCreate(session.State.User.ID, guildId, l)
+				if err != nil {
+					fmt.Printf("Cannot create '%session' command: %session", l.Name, err)
+				}
+			}
+		}
 	}
 }
