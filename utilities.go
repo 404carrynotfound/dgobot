@@ -33,7 +33,7 @@ func ready(session *discordgo.Session, _ *discordgo.Ready) {
 	// Set the playing status.
 	err := session.UpdateGameStatus(0, "Serving "+strconv.Itoa(len(session.State.Guilds))+" guilds!")
 	if err != nil {
-		fmt.Printf("Can't set status, %session\n", err)
+		fmt.Printf("Can't set status, %s\n", err)
 	}
 
 	// Checks for unused commands and deletes them
@@ -48,7 +48,7 @@ func ready(session *discordgo.Session, _ *discordgo.Ready) {
 				if l.Name == o.Name {
 					_, err = session.ApplicationCommandCreate(session.State.User.ID, guildId, l)
 					if err != nil {
-						fmt.Printf("Cannot create '%session' command: %session\n", l.Name, err)
+						fmt.Printf("Cannot create '%s' command: %s\n", l.Name, err)
 					}
 
 					found = true
@@ -58,11 +58,11 @@ func ready(session *discordgo.Session, _ *discordgo.Ready) {
 			}
 			// If we didn't found a match for the locally stored command, it means the command is new. We register it
 			if !found {
-				fmt.Printf("Registering new command %session\n", l.Name)
+				fmt.Printf("Registering new command %s\n", l.Name)
 
 				_, err = session.ApplicationCommandCreate(session.State.User.ID, guildId, l)
 				if err != nil {
-					fmt.Printf("Cannot create '%session' command: %session", l.Name, err)
+					fmt.Printf("Cannot create '%s' command: %s\n", l.Name, err)
 				}
 			}
 		}
