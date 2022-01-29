@@ -5,12 +5,12 @@ services:
         image: fredboat/lavalink:dev
         restart: unless-stopped
         volumes:
-            - ./application.yml:/opt/Lavalink/application.
+            - ./application.yml:/opt/Lavalink/application.yml
+            - ./plugins/:/opt/Lavalink/plugins/
         networks:
             - lavalink
         ports:
             - 2333:2333
-            - 8080:8080
 
 networks:
     lavalink: 
