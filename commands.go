@@ -1,9 +1,11 @@
 package main
 
 import (
+	"dgobot/interaction"
 	"fmt"
 	"github.com/DisgoOrg/disgolink/lavalink"
 	"github.com/bwmarrin/discordgo"
+	"time"
 )
 
 var (
@@ -21,7 +23,27 @@ var (
 			},
 		},
 		{
-			Name:        "info",
+			Name:        "skip",
+			Description: "skips current song",
+		},
+		{
+			Name:        "stop",
+			Description: "stop player",
+		},
+		{
+			Name:        "current",
+			Description: "current song",
+		},
+		{
+			Name:        "pause",
+			Description: "pauses player",
+		},
+		{
+			Name:        "resume",
+			Description: "resumes player",
+		},
+		{
+			Name:        "whois",
 			Description: "Gives user information",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -32,6 +54,7 @@ var (
 				},
 			},
 		},
+
 		//{
 		//	Name:        "user role",
 		//	Description: "Add role to user",
@@ -57,35 +80,29 @@ var (
 		//	},
 		//},
 	}
-	CommandHandlers = map[string]func(session *discordgo.Session, interaction *discordgo.InteractionCreate, bot *Bot){
+	CommandHandlers = map[string]func(session *discordgo.Session, interaction *discordgo.InteractionCreate){
 		// Plays a song from spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
-		"play": func(session *discordgo.Session, interaction *discordgo.InteractionCreate, bot *Bot) {
+		"play": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 			vc := findChannel(session, interaction.Interaction)
-
 			if vc == "" {
-				_, err := session.ChannelMessageSend(interaction.ChannelID, "Please provide a channel id and something to play")
-				if err != nil {
-					fmt.Printf("Error while sending message: %s\n", err)
-				}
+				interactions.SendAndDeleteInteraction(session, "Please join a voice channel.", interaction.Interaction, time.Second*5)
+				return
 			}
 
-			//link := lavalink.New(lavalink.WithUserID("935108152695881789"))
-
 			query := interaction.Interaction.ApplicationCommandData().Options[0].StringValue()
-			fmt.Println(query)
 			if !validURL(query) {
 				query = "ytsearch:" + query
 			}
 
-			_ = bot.Link.BestRestClient().LoadItemHandler(query, lavalink.NewResultHandler(
+			err := botLink.Link.BestRestClient().LoadItemHandler(query, lavalink.NewResultHandler(
 				func(track lavalink.AudioTrack) {
-					play(session, bot.Link, interaction.GuildID, vc, interaction.ChannelID, track)
+					botLink.Play(session, vc, interaction.Interaction, "", track)
 				},
 				func(playlist lavalink.AudioPlaylist) {
-					play(session, bot.Link, interaction.GuildID, vc, interaction.ChannelID, playlist.Tracks[0])
+					botLink.Play(session, vc, interaction.Interaction, playlist.Info.Name, playlist.Tracks...)
 				},
 				func(tracks []lavalink.AudioTrack) {
-					play(session, bot.Link, interaction.GuildID, vc, interaction.ChannelID, tracks[0])
+					botLink.Play(session, vc, interaction.Interaction, "", tracks[0])
 				},
 				func() {
 					_, _ = session.ChannelMessageSend(interaction.ChannelID, "no matches found for: "+query)
@@ -94,25 +111,62 @@ var (
 					_, _ = session.ChannelMessageSend(interaction.ChannelID, "error while loading track: "+ex.Message)
 				},
 			))
+			if err != nil {
+				fmt.Printf("Error while player loading: %s\n", err)
+				return
+			}
 		},
 
-		"info": func(session *discordgo.Session, interaction *discordgo.InteractionCreate, bot *Bot) {
-			sendEmbed(session, &discordgo.MessageEmbed{
+		"skip": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+			botLink.Skip(session, interaction.Interaction)
+		},
+
+		"stop": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+			botLink.Stop(session, interaction.Interaction)
+			err := session.ChannelVoiceJoinManual(guildId, "", false, false)
+			if err != nil {
+				fmt.Printf("Error when leaving channel: %s\n", err)
+				return
+			}
+		},
+
+		"current": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+			botLink.Current(session, interaction.Interaction)
+		},
+
+		"pause": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+			botLink.Pause(session, interaction.Interaction)
+		},
+
+		"resume": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+			botLink.Resume(session, interaction.Interaction)
+		},
+
+		"whois": func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
+			var user *discordgo.User
+			if len(interaction.Interaction.ApplicationCommandData().Options) != 0 {
+				user = interaction.Interaction.ApplicationCommandData().Options[0].UserValue(session)
+			}
+
+			if user == nil {
+				user = interaction.Member.User
+			}
+
+			interactions.SendEmbedInteraction(session, &discordgo.MessageEmbed{
 				URL:         "",
 				Type:        "",
-				Title:       interaction.Member.User.String(),
-				Description: interaction.Member.User.AvatarURL(""),
+				Title:       user.String(),
+				Description: "",
 				Timestamp:   "",
 				Color:       0,
 				Footer:      nil,
 				Image:       nil,
-				Thumbnail:   nil,
+				Thumbnail:   &discordgo.MessageEmbedThumbnail{URL: user.AvatarURL("")},
 				Video:       nil,
 				Provider:    nil,
 				Author:      nil,
 				Fields:      nil,
 			}, interaction.Interaction)
-			fmt.Println(interaction.Member.User.ID)
 		},
 	}
 )
