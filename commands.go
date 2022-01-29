@@ -97,13 +97,13 @@ var (
 
 			err := bot.Link.BestRestClient().LoadItemHandler(query, lavalink.NewResultHandler(
 				func(track lavalink.AudioTrack) {
-					bot.Play(bot.Session, vc, interaction.Interaction, "", track)
+					bot.Play(vc, interaction.Interaction, "", track)
 				},
 				func(playlist lavalink.AudioPlaylist) {
-					bot.Play(bot.Session, vc, interaction.Interaction, playlist.Info.Name, playlist.Tracks...)
+					bot.Play(vc, interaction.Interaction, playlist.Info.Name, playlist.Tracks...)
 				},
 				func(tracks []lavalink.AudioTrack) {
-					bot.Play(bot.Session, vc, interaction.Interaction, "", tracks[0])
+					bot.Play(vc, interaction.Interaction, "", tracks[0])
 				},
 				func() {
 					_, _ = bot.Session.ChannelMessageSend(interaction.ChannelID, "no matches found for: "+query)
@@ -119,11 +119,11 @@ var (
 		},
 
 		"skip": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
-			bot.Skip(bot.Session, interaction.Interaction)
+			bot.Skip(interaction.Interaction)
 		},
 
 		"stop": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
-			bot.Stop(bot.Session, interaction.Interaction)
+			bot.Stop(interaction.Interaction)
 			err := bot.Session.ChannelVoiceJoinManual(guildId, "", false, false)
 			if err != nil {
 				fmt.Printf("Error when leaving channel: %s\n", err)
@@ -132,15 +132,15 @@ var (
 		},
 
 		"current": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
-			bot.Current(bot.Session, interaction.Interaction)
+			bot.Current(interaction.Interaction)
 		},
 
 		"pause": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
-			bot.Pause(bot.Session, interaction.Interaction)
+			bot.Pause(interaction.Interaction)
 		},
 
 		"resume": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
-			bot.Resume(bot.Session, interaction.Interaction)
+			bot.Resume(interaction.Interaction)
 		},
 
 		"whois": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {

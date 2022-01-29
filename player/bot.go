@@ -33,13 +33,13 @@ func (b *Bot) RegisterNodes() {
 	}
 }
 
-func (b *Bot) Play(session *discordgo.Session, voiceChannelID string, interaction *discordgo.Interaction, playlist string, tracks ...lavalink.AudioTrack) {
+func (b *Bot) Play(voiceChannelID string, interaction *discordgo.Interaction, playlist string, tracks ...lavalink.AudioTrack) {
 	guildID := interaction.GuildID
 	waitTime := time.Second * 10
 
-	err := session.ChannelVoiceJoinManual(guildID, voiceChannelID, false, true)
+	err := b.Session.ChannelVoiceJoinManual(guildID, voiceChannelID, false, true)
 	if err != nil {
-		interactions.SendAndDeleteInteraction(session, "Error while joining voice channel: "+err.Error(), interaction, waitTime)
+		interactions.SendAndDeleteInteraction(b.Session, "Error while joining voice channel: "+err.Error(), interaction, waitTime)
 		return
 	}
 
@@ -57,26 +57,26 @@ func (b *Bot) Play(session *discordgo.Session, voiceChannelID string, interactio
 	if !manager.playing {
 		track := manager.PopQueue()
 		if err := manager.Player.Play(track); err != nil {
-			interactions.SendAndDeleteInteraction(session, "Error while playing track: "+err.Error(), interaction, waitTime)
+			interactions.SendAndDeleteInteraction(b.Session, "Error while playing track: "+err.Error(), interaction, waitTime)
 			return
 		}
 		if playlist == "" {
-			interactions.SendMessageInteraction(session, "Playing: "+track.Info().Title, interaction)
+			interactions.SendMessageInteraction(b.Session, "Playing: "+track.Info().Title, interaction)
 		} else {
-			interactions.SendMessageInteraction(session, "Playing: "+playlist, interaction)
+			interactions.SendMessageInteraction(b.Session, "Playing: "+playlist, interaction)
 		}
 		manager.playing = true
 	} else {
 		if playlist == "" {
-			interactions.SendMessageInteraction(session, "Playing: "+tracks[0].Info().Title, interaction)
+			interactions.SendMessageInteraction(b.Session, "Playing: "+tracks[0].Info().Title, interaction)
 		} else {
-			interactions.SendMessageInteraction(session, "Playing: "+playlist, interaction)
+			interactions.SendMessageInteraction(b.Session, "Playing: "+playlist, interaction)
 		}
 	}
 
 }
 
-func (b *Bot) Skip(session *discordgo.Session, interaction *discordgo.Interaction) {
+func (b *Bot) Skip(interaction *discordgo.Interaction) {
 	guildID := interaction.GuildID
 	waitTime := time.Second * 10
 
@@ -86,20 +86,20 @@ func (b *Bot) Skip(session *discordgo.Session, interaction *discordgo.Interactio
 	}
 
 	if len(manager.Queue) == 0 {
-		b.Stop(session, interaction)
+		b.Stop(interaction)
 	}
 
 	if manager.playing {
 		track := manager.PopQueue()
 		if err := manager.Player.Play(track); err != nil {
-			interactions.SendAndDeleteInteraction(session, "Error while playing track: "+err.Error(), interaction, waitTime)
+			interactions.SendAndDeleteInteraction(b.Session, "Error while playing track: "+err.Error(), interaction, waitTime)
 			return
 		}
-		interactions.SendMessageInteraction(session, "Playing: "+track.Info().Title, interaction)
+		interactions.SendMessageInteraction(b.Session, "Playing: "+track.Info().Title, interaction)
 	}
 }
 
-func (b *Bot) Stop(session *discordgo.Session, interaction *discordgo.Interaction) {
+func (b *Bot) Stop(interaction *discordgo.Interaction) {
 	guildID := interaction.GuildID
 
 	manager, ok := b.PlayerManagers[guildID]
@@ -115,35 +115,35 @@ func (b *Bot) Stop(session *discordgo.Session, interaction *discordgo.Interactio
 		return
 	}
 
-	err = session.ChannelVoiceJoinManual(guildID, "", false, false)
+	err = b.Session.ChannelVoiceJoinManual(guildID, "", false, false)
 	if err != nil {
 		fmt.Printf("Error when leaving channel: %s\n", err)
 		return
 	}
 
-	interactions.SendMessageInteraction(session, "Queue is cleared", interaction)
+	interactions.SendMessageInteraction(b.Session, "Queue is cleared", interaction)
 }
 
-func (b *Bot) Current(session *discordgo.Session, interaction *discordgo.Interaction) {
-	interactions.SendMessageInteraction(session, b.Link.Player(snowflake.Snowflake(interaction.GuildID)).Track().Info().Title, interaction)
+func (b *Bot) Current(interaction *discordgo.Interaction) {
+	interactions.SendMessageInteraction(b.Session, b.Link.Player(snowflake.Snowflake(interaction.GuildID)).Track().Info().Title, interaction)
 }
 
-func (b *Bot) Pause(session *discordgo.Session, interaction *discordgo.Interaction) {
+func (b *Bot) Pause(interaction *discordgo.Interaction) {
 	guildSnowflake := snowflake.Snowflake(interaction.GuildID)
 	if b.Link.Player(guildSnowflake).Paused() {
-		interactions.SendAndDeleteInteraction(session, "Player is already paused", interaction, time.Second*10)
+		interactions.SendAndDeleteInteraction(b.Session, "Player is already paused", interaction, time.Second*10)
 		return
 	}
-	interactions.SendMessageInteraction(session, "Player is paused", interaction)
+	interactions.SendMessageInteraction(b.Session, "Player is paused", interaction)
 	_ = b.Link.Player(guildSnowflake).Pause(true)
 }
 
-func (b *Bot) Resume(session *discordgo.Session, interaction *discordgo.Interaction) {
+func (b *Bot) Resume(interaction *discordgo.Interaction) {
 	guildSnowflake := snowflake.Snowflake(interaction.GuildID)
 	if !b.Link.Player(guildSnowflake).Paused() {
-		interactions.SendAndDeleteInteraction(session, "Player is already resumed", interaction, time.Second*10)
+		interactions.SendAndDeleteInteraction(b.Session, "Player is already resumed", interaction, time.Second*10)
 		return
 	}
-	interactions.SendMessageInteraction(session, "Player is resumed", interaction)
+	interactions.SendMessageInteraction(b.Session, "Player is resumed", interaction)
 	_ = b.Link.Player(guildSnowflake).Pause(false)
 }
