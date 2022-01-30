@@ -265,17 +265,4 @@ var Commands = []*discordgo.ApplicationCommand{
 			},
 		},
 	},
-	//{
-	//	Name:        "user role",
-	//	Description: "Add role to user",
-	//	Options: []*discordgo.ApplicationCommandOption{
-	//		{
-	//			Type:        discordgo.ApplicationCommandOptionUser,
-	//			Name:        "user",
-	//			Description: "User",
-	//			Required:    true,
-	//		},
-	//	},
-	//},
-	// TODO: GuildMemberMute
 }

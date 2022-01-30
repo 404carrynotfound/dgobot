@@ -328,6 +328,6 @@ var CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.In
 			fmt.Printf("Error when setting user role: %s\n", err)
 			return
 		}
-		interactions.SendMessageInteraction(bot.Session, "Role is added to "+user.Mention(), interaction.Interaction)
+		interactions.SendMessageInteraction(bot.Session, "Role is removed from "+user.Mention(), interaction.Interaction)
 	},
 }
