@@ -266,10 +266,22 @@ var CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.In
 
 		role, err := bot.Session.GuildRoleEdit(interaction.GuildID, role.ID, name, int(color), hoist, permission, mention)
 		if err != nil {
-			interactions.SendAndDeleteInteraction(bot.Session, "Role can't be created.", interaction.Interaction, time.Second*5)
+			interactions.SendAndDeleteInteraction(bot.Session, "Role can't be edited.", interaction.Interaction, time.Second*5)
 			fmt.Printf("Error when creating new role: %s\n", err)
 			return
 		}
 		interactions.SendMessageInteraction(bot.Session, "Role is updated "+role.Mention(), interaction.Interaction)
+	},
+
+	"delete_role": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+		role := interaction.ApplicationCommandData().Options[0].RoleValue(bot.Session, interaction.GuildID)
+
+		err := bot.Session.GuildRoleDelete(interaction.GuildID, role.ID)
+		if err != nil {
+			interactions.SendAndDeleteInteraction(bot.Session, "Role can't be deleted.", interaction.Interaction, time.Second*5)
+			fmt.Printf("Error when creating new role: %s\n", err)
+			return
+		}
+		interactions.SendMessageInteraction(bot.Session, "Role is deleted.", interaction.Interaction)
 	},
 }
