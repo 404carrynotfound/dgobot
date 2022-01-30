@@ -267,7 +267,7 @@ var CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.In
 		role, err := bot.Session.GuildRoleEdit(interaction.GuildID, role.ID, name, int(color), hoist, permission, mention)
 		if err != nil {
 			interactions.SendAndDeleteInteraction(bot.Session, "Role can't be edited.", interaction.Interaction, time.Second*5)
-			fmt.Printf("Error when creating new role: %s\n", err)
+			fmt.Printf("Error when updating role: %s\n", err)
 			return
 		}
 		interactions.SendMessageInteraction(bot.Session, "Role is updated "+role.Mention(), interaction.Interaction)
@@ -279,9 +279,35 @@ var CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.In
 		err := bot.Session.GuildRoleDelete(interaction.GuildID, role.ID)
 		if err != nil {
 			interactions.SendAndDeleteInteraction(bot.Session, "Role can't be deleted.", interaction.Interaction, time.Second*5)
-			fmt.Printf("Error when creating new role: %s\n", err)
+			fmt.Printf("Error when deleting role: %s\n", err)
 			return
 		}
 		interactions.SendMessageInteraction(bot.Session, "Role is deleted.", interaction.Interaction)
+	},
+
+	"add_role": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+		user := interaction.ApplicationCommandData().Options[0].UserValue(bot.Session)
+		role := interaction.ApplicationCommandData().Options[1].RoleValue(bot.Session, interaction.GuildID)
+		member, err := bot.Session.GuildMember(interaction.GuildID, user.ID)
+		if err != nil {
+			interactions.SendAndDeleteInteraction(bot.Session, "Error when getting user information.", interaction.Interaction, time.Second*5)
+			fmt.Printf("Error when getting user information: %s\n", err)
+			return
+		}
+
+		for _, memberRole := range member.Roles {
+			if memberRole == role.ID {
+				interactions.SendAndDeleteInteraction(bot.Session, user.Mention()+" already have is role", interaction.Interaction, time.Second*5)
+				return
+			}
+		}
+
+		err = bot.Session.GuildMemberRoleAdd(interaction.GuildID, user.ID, role.ID)
+		if err != nil {
+			interactions.SendAndDeleteInteraction(bot.Session, "Error when setting user role.", interaction.Interaction, time.Second*5)
+			fmt.Printf("Error when setting user role: %s\n", err)
+			return
+		}
+		interactions.SendMessageInteraction(bot.Session, "Role is added to "+user.Mention(), interaction.Interaction)
 	},
 }

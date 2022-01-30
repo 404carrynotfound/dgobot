@@ -229,6 +229,24 @@ var Commands = []*discordgo.ApplicationCommand{
 			},
 		},
 	},
+	{
+		Name:        "add_role",
+		Description: "Deletes role in current guild.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "The name of the user to be added role.",
+				Required:    true,
+			},
+			{
+				Type:        discordgo.ApplicationCommandOptionRole,
+				Name:        "role",
+				Description: "Role to be assigned to the user",
+				Required:    true,
+			},
+		},
+	},
 	//{
 	//	Name:        "user role",
 	//	Description: "Add role to user",
