@@ -110,41 +110,43 @@ var (
 				},
 			},
 		},
-		//{
-		//	Name:        "mute",
-		//	Description: "mute user",
-		//	Options: []*discordgo.ApplicationCommandOption{
-		//		{
-		//			Type:        discordgo.ApplicationCommandOptionUser,
-		//			Name:        "user",
-		//			Description: "mute user",
-		//			Required:    true,
-		//		},
-		//	},
-		//},
-		//{
-		//	Name:        "deaf",
-		//	Description: "deaf user",
-		//	Options: []*discordgo.ApplicationCommandOption{
-		//		{
-		//			Type:        discordgo.ApplicationCommandOptionUser,
-		//			Name:        "user",
-		//			Description: "deaf user",
-		//			Required:    true,
-		//		},
-		//	},
-		//},
-		//{
-		//	Name:        "purge",
-		//	Description: "delete last n messages",
-		//	Options: []*discordgo.ApplicationCommandOption{
-		//		{
-		//			Type:     discordgo.ApplicationCommandOptionInteger,
-		//			Name:     "count",
-		//			Required: true,
-		//		},
-		//	},
-		//},
+		{
+			Name:        "mute",
+			Description: "mute user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "mute user",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "defan",
+			Description: "deafan user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "deafan user",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "purge",
+			Description: "delete last n messages",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "count",
+					Description: "The number of the messages to be deleted. A maximum of 100 messages.",
+					Required:    true,
+				},
+			},
+		},
+		// TODO: GuildMemberMute
 		//{
 		//	Name:        "user role",
 		//	Description: "Add role to user",
@@ -300,10 +302,69 @@ var (
 			err := bot.Session.GuildBanDelete(interaction.GuildID, interaction.ApplicationCommandData().Options[0].StringValue())
 			if err != nil {
 				interactions.SendAndDeleteInteraction(bot.Session, "Invalid id", interaction.Interaction, time.Second*5)
-				fmt.Printf("Error with banning member from guild: %s\n", err)
+				fmt.Printf("Error with unbanning member from guild: %s\n", err)
 				return
 			}
 			interactions.SendMessageInteraction(bot.Session, "<@"+interaction.ApplicationCommandData().Options[0].StringValue()+"> is unbanned", interaction.Interaction)
+		},
+
+		"mute": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			member, err := bot.Session.GuildMember(interaction.GuildID, interaction.ApplicationCommandData().Options[0].UserValue(bot.Session).ID)
+
+			err = bot.Session.GuildMemberMute(interaction.GuildID, member.User.ID, !member.Mute)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Error has occurred", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with muting member from guild: %s\n", err)
+				return
+			}
+			if !member.Mute {
+				interactions.SendMessageInteraction(bot.Session, member.Mention()+" is muted", interaction.Interaction)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, member.Mention()+" is unmuted", interaction.Interaction)
+		},
+
+		"defan": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			member, err := bot.Session.GuildMember(interaction.GuildID, interaction.ApplicationCommandData().Options[0].UserValue(bot.Session).ID)
+
+			err = bot.Session.GuildMemberDeafen(interaction.GuildID, member.User.ID, !member.Deaf)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Error has occurred", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with muting member from guild: %s\n", err)
+				return
+			}
+			if !member.Deaf {
+				interactions.SendMessageInteraction(bot.Session, member.Mention()+" is defaned", interaction.Interaction)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, member.Mention()+" is undefaned", interaction.Interaction)
+		},
+
+		"purge": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			count := int(interaction.ApplicationCommandData().Options[0].IntValue())
+			if count > 100 {
+				count = 100
+			}
+
+			msgs, err := bot.Session.ChannelMessages(interaction.ChannelID, count, "", "", "")
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Can't delete last messages", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with getting last messages: %s\n", err)
+			}
+			msgIds := make([]string, 0)
+
+			for _, msg := range msgs {
+				if msg.ID != "" {
+					msgIds = append(msgIds, msg.ID)
+				}
+			}
+
+			err = bot.Session.ChannelMessagesBulkDelete(interaction.ChannelID, msgIds)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Can't delete last messages", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with delteing last messages: %s\n", err)
+			}
+			interactions.SendAndDeleteInteraction(bot.Session, "Last "+strconv.Itoa(count)+" messages are deleted", interaction.Interaction, time.Second*5)
 		},
 	}
 )
