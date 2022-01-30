@@ -182,18 +182,48 @@ var (
 				},
 			},
 		},
-		//{
-		//	Name:        "create role",
-		//	Description: "Creates role in current guild",
-		//	Options: []*discordgo.ApplicationCommandOption{
-		//		{
-		//			Type:        discordgo.ApplicationCommandOptionString,
-		//			Name:        "name",
-		//			Description: "Adds name to role",
-		//			Required:    true,
-		//		},
-		//	},
-		//},
+		{
+			Name:        "edit_role",
+			Description: "Edit role in current guild.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionRole,
+					Name:        "role",
+					Description: "The name of the Role to be edited.",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "The name of the Role.",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "color",
+					Description: "The color of the role (decimal, not hex).",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "hoist",
+					Description: "Whether to display the role's users separately.",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "permission",
+					Description: "The permissions for the role.",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "mention",
+					Description: "Whether this role is mentionable.",
+					Required:    false,
+				},
+			},
+		},
 		//{
 		//	Name:        "user role",
 		//	Description: "Add role to user",
@@ -425,6 +455,51 @@ var (
 				return
 			}
 			interactions.SendMessageInteraction(bot.Session, "Role is created "+role.Mention(), interaction.Interaction)
+		},
+
+		"edit_role": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			if len(interaction.ApplicationCommandData().Options) < 2 {
+				interactions.SendAndDeleteInteraction(bot.Session, "Please select option to edit", interaction.Interaction, time.Second*5)
+			}
+
+			role := interaction.ApplicationCommandData().Options[0].RoleValue(bot.Session, interaction.GuildID)
+
+			var (
+				name       = role.Name
+				color      = role.Color
+				hoist      = role.Hoist
+				permission = role.Permissions
+				mention    = role.Mentionable
+			)
+
+			for _, option := range interaction.ApplicationCommandData().Options {
+				switch option.Name {
+				case "name":
+					name = option.StringValue()
+					break
+				case "color":
+					color = int(option.IntValue())
+					break
+				case "hoist":
+					hoist = option.BoolValue()
+					break
+				case "permission":
+					permission = option.IntValue()
+					break
+				case "mention":
+					mention = option.BoolValue()
+					break
+				}
+
+			}
+
+			role, err := bot.Session.GuildRoleEdit(interaction.GuildID, role.ID, name, int(color), hoist, permission, mention)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Role can't be created.", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error when creating new role: %s\n", err)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, "Role is updated "+role.Mention(), interaction.Interaction)
 		},
 	}
 )
