@@ -295,14 +295,34 @@ var CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.In
 			return
 		}
 
-		for _, memberRole := range member.Roles {
-			if memberRole == role.ID {
-				interactions.SendAndDeleteInteraction(bot.Session, user.Mention()+" already have is role", interaction.Interaction, time.Second*5)
-				return
-			}
+		if findUserRole(member, role) {
+			interactions.SendAndDeleteInteraction(bot.Session, user.Mention()+" already have this role", interaction.Interaction, time.Second*5)
 		}
 
 		err = bot.Session.GuildMemberRoleAdd(interaction.GuildID, user.ID, role.ID)
+		if err != nil {
+			interactions.SendAndDeleteInteraction(bot.Session, "Error when setting user role.", interaction.Interaction, time.Second*5)
+			fmt.Printf("Error when setting user role: %s\n", err)
+			return
+		}
+		interactions.SendMessageInteraction(bot.Session, "Role is added to "+user.Mention(), interaction.Interaction)
+	},
+
+	"remove_role": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+		user := interaction.ApplicationCommandData().Options[0].UserValue(bot.Session)
+		role := interaction.ApplicationCommandData().Options[1].RoleValue(bot.Session, interaction.GuildID)
+		member, err := bot.Session.GuildMember(interaction.GuildID, user.ID)
+		if err != nil {
+			interactions.SendAndDeleteInteraction(bot.Session, "Error when getting user information.", interaction.Interaction, time.Second*5)
+			fmt.Printf("Error when getting user information: %s\n", err)
+			return
+		}
+
+		if !findUserRole(member, role) {
+			interactions.SendAndDeleteInteraction(bot.Session, user.Mention()+" doesn't have this role", interaction.Interaction, time.Second*5)
+		}
+
+		err = bot.Session.GuildMemberRoleRemove(interaction.GuildID, user.ID, role.ID)
 		if err != nil {
 			interactions.SendAndDeleteInteraction(bot.Session, "Error when setting user role.", interaction.Interaction, time.Second*5)
 			fmt.Printf("Error when setting user role: %s\n", err)
