@@ -33,6 +33,7 @@ func (b *Bot) RegisterNodes() {
 	}
 }
 
+// Play Start a new session for lava player and returns a message
 func (b *Bot) Play(voiceChannelID string, interaction *discordgo.Interaction, playlist string, tracks ...lavalink.AudioTrack) {
 	guildID := interaction.GuildID
 	waitTime := time.Second * 10
@@ -76,6 +77,7 @@ func (b *Bot) Play(voiceChannelID string, interaction *discordgo.Interaction, pl
 
 }
 
+// Skip skips current song in lava player
 func (b *Bot) Skip(interaction *discordgo.Interaction) {
 	guildID := interaction.GuildID
 	waitTime := time.Second * 10
@@ -99,6 +101,7 @@ func (b *Bot) Skip(interaction *discordgo.Interaction) {
 	}
 }
 
+// Stop stopping current lava player session, clears current queue and bot leave current voice channel
 func (b *Bot) Stop(interaction *discordgo.Interaction) {
 	guildID := interaction.GuildID
 
@@ -124,11 +127,13 @@ func (b *Bot) Stop(interaction *discordgo.Interaction) {
 	interactions.SendMessageInteraction(b.Session, "Queue is cleared", interaction)
 }
 
+// Current sends a message with current song in lava player
 func (b *Bot) Current(interaction *discordgo.Interaction) {
 	track := b.Link.Player(snowflake.Snowflake(interaction.GuildID)).Track().Info()
 	interactions.SendMessageInteraction(b.Session, track.Author+" - "+track.Title, interaction)
 }
 
+// Pause pauses current lava player session
 func (b *Bot) Pause(interaction *discordgo.Interaction) {
 	guildSnowflake := snowflake.Snowflake(interaction.GuildID)
 	if b.Link.Player(guildSnowflake).Paused() {
@@ -139,6 +144,7 @@ func (b *Bot) Pause(interaction *discordgo.Interaction) {
 	_ = b.Link.Player(guildSnowflake).Pause(true)
 }
 
+// Resume resumes current lava player session
 func (b *Bot) Resume(interaction *discordgo.Interaction) {
 	guildSnowflake := snowflake.Snowflake(interaction.GuildID)
 	if !b.Link.Player(guildSnowflake).Paused() {
