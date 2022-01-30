@@ -23,6 +23,15 @@ func findChannel(session *discordgo.Session, interaction *discordgo.Interaction)
 	return ""
 }
 
+func findUserRole(member *discordgo.Member, role *discordgo.Role) bool {
+	for _, memberRole := range member.Roles {
+		if memberRole == role.ID {
+			return true
+		}
+	}
+	return false
+}
+
 func validURL(value string) bool {
 	_, err := url.ParseRequestURI(value)
 	return err == nil
