@@ -247,6 +247,24 @@ var Commands = []*discordgo.ApplicationCommand{
 			},
 		},
 	},
+	{
+		Name:        "remove_role",
+		Description: "Remove role from user.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "The name of the user to be removed role.",
+				Required:    true,
+			},
+			{
+				Type:        discordgo.ApplicationCommandOptionRole,
+				Name:        "role",
+				Description: "Role to be removed from the user",
+				Required:    true,
+			},
+		},
+	},
 	//{
 	//	Name:        "user role",
 	//	Description: "Add role to user",
