@@ -14,12 +14,14 @@ type Manager struct {
 	paused  bool
 }
 
+// AddQueue adds 1 or more lava link tracks to manager queue
 func (m *Manager) AddQueue(tracks ...lavalink.AudioTrack) {
 	m.QueueMu.Lock()
 	defer m.QueueMu.Unlock()
 	m.Queue = append(m.Queue, tracks...)
 }
 
+// PopQueue remove first lava link track from manager queue
 func (m *Manager) PopQueue() lavalink.AudioTrack {
 	m.QueueMu.Lock()
 	defer m.QueueMu.Unlock()
@@ -31,12 +33,14 @@ func (m *Manager) PopQueue() lavalink.AudioTrack {
 	return track
 }
 
+// EmptyQueue remove all elements from manager queue
 func (m *Manager) EmptyQueue() {
 	m.QueueMu.Lock()
 	defer m.QueueMu.Unlock()
 	m.Queue = nil
 }
 
+// OnTrackEnd event when track ends
 func (m *Manager) OnTrackEnd(player lavalink.Player, _ lavalink.AudioTrack, endReason lavalink.AudioTrackEndReason) {
 	if !endReason.MayStartNext() {
 		m.playing = false
