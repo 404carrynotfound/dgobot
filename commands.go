@@ -146,7 +146,54 @@ var (
 				},
 			},
 		},
-		// TODO: GuildMemberMute
+		{
+			Name:        "create_role",
+			Description: "Creates role in current guild.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "The name of the Role.",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "color",
+					Description: "The color of the role (decimal, not hex).",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "hoist",
+					Description: "Whether to display the role's users separately.",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "permission",
+					Description: "The permissions for the role.",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "mention",
+					Description: "Whether this role is mentionable.",
+					Required:    true,
+				},
+			},
+		},
+		//{
+		//	Name:        "create role",
+		//	Description: "Creates role in current guild",
+		//	Options: []*discordgo.ApplicationCommandOption{
+		//		{
+		//			Type:        discordgo.ApplicationCommandOptionString,
+		//			Name:        "name",
+		//			Description: "Adds name to role",
+		//			Required:    true,
+		//		},
+		//	},
+		//},
 		//{
 		//	Name:        "user role",
 		//	Description: "Add role to user",
@@ -159,18 +206,8 @@ var (
 		//		},
 		//	},
 		//},
-		//{
-		//	Name:        "create role",
-		//	Description: "Creates role in current guild",
-		//	Options: []*discordgo.ApplicationCommandOption{
-		//		{
-		//			Type:        discordgo.ApplicationCommandOptionString,
-		//			Name:        "role name",
-		//			Description: "Adds name to role",
-		//			Required:    true,
-		//		},
-		//	},
-		//},
+		// TODO: GuildMemberMute
+
 	}
 	CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.InteractionCreate){
 		// Plays a song from spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
@@ -365,6 +402,29 @@ var (
 				fmt.Printf("Error with delteing last messages: %s\n", err)
 			}
 			interactions.SendAndDeleteInteraction(bot.Session, "Last "+strconv.Itoa(count)+" messages are deleted", interaction.Interaction, time.Second*5)
+		},
+
+		"create_role": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			roleName := interaction.ApplicationCommandData().Options[0].StringValue()
+			color := interaction.ApplicationCommandData().Options[1].IntValue()
+			hoist := interaction.ApplicationCommandData().Options[2].BoolValue()
+			permissions := interaction.ApplicationCommandData().Options[3].IntValue()
+			mention := interaction.ApplicationCommandData().Options[4].BoolValue()
+
+			role, err := bot.Session.GuildRoleCreate(interaction.GuildID)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Role can't be created.", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error when creating new role: %s\n", err)
+				return
+			}
+
+			role, err = bot.Session.GuildRoleEdit(interaction.GuildID, role.ID, roleName, int(color), hoist, permissions, mention)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Role can't be created.", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error when creating new role: %s\n", err)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, "Role is created "+role.Mention(), interaction.Interaction)
 		},
 	}
 )
