@@ -68,9 +68,9 @@ func (b *Bot) Play(voiceChannelID string, interaction *discordgo.Interaction, pl
 		manager.playing = true
 	} else {
 		if playlist == "" {
-			interactions.SendMessageInteraction(b.Session, "Playing: "+tracks[0].Info().Title, interaction)
+			interactions.SendMessageInteraction(b.Session, "Added to queue: "+tracks[0].Info().Title, interaction)
 		} else {
-			interactions.SendMessageInteraction(b.Session, "Playing: "+playlist, interaction)
+			interactions.SendMessageInteraction(b.Session, "Added to queue: "+playlist, interaction)
 		}
 	}
 
@@ -125,7 +125,8 @@ func (b *Bot) Stop(interaction *discordgo.Interaction) {
 }
 
 func (b *Bot) Current(interaction *discordgo.Interaction) {
-	interactions.SendMessageInteraction(b.Session, b.Link.Player(snowflake.Snowflake(interaction.GuildID)).Track().Info().Title, interaction)
+	track := b.Link.Player(snowflake.Snowflake(interaction.GuildID)).Track().Info()
+	interactions.SendMessageInteraction(b.Session, track.Author+" - "+track.Title, interaction)
 }
 
 func (b *Bot) Pause(interaction *discordgo.Interaction) {
