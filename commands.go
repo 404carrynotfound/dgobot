@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/DisgoOrg/disgolink/lavalink"
 	"github.com/bwmarrin/discordgo"
+	"strconv"
 	"time"
 )
 
@@ -55,7 +56,95 @@ var (
 				},
 			},
 		},
-
+		{
+			Name:        "kick",
+			Description: "Kick user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "Tag user to be kicked",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for this ban",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "ban",
+			Description: "Ban user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "Tag user to be banned",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "reason",
+					Description: "The reason for this ban",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "days",
+					Description: "The number of days of previous comments to delete.",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "unban",
+			Description: "Unban user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "user",
+					Description: "Unban user",
+					Required:    true,
+				},
+			},
+		},
+		//{
+		//	Name:        "mute",
+		//	Description: "mute user",
+		//	Options: []*discordgo.ApplicationCommandOption{
+		//		{
+		//			Type:        discordgo.ApplicationCommandOptionUser,
+		//			Name:        "user",
+		//			Description: "mute user",
+		//			Required:    true,
+		//		},
+		//	},
+		//},
+		//{
+		//	Name:        "deaf",
+		//	Description: "deaf user",
+		//	Options: []*discordgo.ApplicationCommandOption{
+		//		{
+		//			Type:        discordgo.ApplicationCommandOptionUser,
+		//			Name:        "user",
+		//			Description: "deaf user",
+		//			Required:    true,
+		//		},
+		//	},
+		//},
+		//{
+		//	Name:        "purge",
+		//	Description: "delete last n messages",
+		//	Options: []*discordgo.ApplicationCommandOption{
+		//		{
+		//			Type:     discordgo.ApplicationCommandOptionInteger,
+		//			Name:     "count",
+		//			Required: true,
+		//		},
+		//	},
+		//},
 		//{
 		//	Name:        "user role",
 		//	Description: "Add role to user",
@@ -153,21 +242,68 @@ var (
 				user = interaction.Member.User
 			}
 
+			member, _ := bot.Session.GuildMember(interaction.GuildID, user.ID)
+
 			interactions.SendEmbedInteraction(bot.Session, &discordgo.MessageEmbed{
-				URL:         "",
-				Type:        "",
-				Title:       user.String(),
-				Description: "",
-				Timestamp:   "",
-				Color:       0,
-				Footer:      nil,
-				Image:       nil,
-				Thumbnail:   &discordgo.MessageEmbedThumbnail{URL: user.AvatarURL("")},
-				Video:       nil,
-				Provider:    nil,
-				Author:      nil,
-				Fields:      nil,
+				Title:     member.User.String(),
+				Thumbnail: &discordgo.MessageEmbedThumbnail{URL: member.User.AvatarURL("")},
+				Author: &discordgo.MessageEmbedAuthor{
+					Name:    member.User.String(),
+					IconURL: member.User.AvatarURL(""),
+				},
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:   "Joined",
+						Value:  member.JoinedAt.Local().Format("Mon Jan 2, 2006 15:04"),
+						Inline: false,
+					},
+					{
+						Name:   "Muted",
+						Value:  strconv.FormatBool(member.Mute),
+						Inline: true,
+					},
+					{
+						Name:   "Deaf",
+						Value:  strconv.FormatBool(member.Deaf),
+						Inline: true,
+					},
+				},
 			}, interaction.Interaction)
+		},
+
+		"kick": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			reason := interaction.ApplicationCommandData().Options[1].StringValue()
+
+			err := bot.Session.GuildMemberDeleteWithReason(interaction.GuildID, interaction.ApplicationCommandData().Options[0].UserValue(bot.Session).ID, reason)
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Error has occurred", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with kicking member from guild: %s\n", err)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, interaction.ApplicationCommandData().Options[0].UserValue(bot.Session).Mention()+" is kicked", interaction.Interaction)
+		},
+
+		"ban": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			reason := interaction.ApplicationCommandData().Options[1].StringValue()
+			days := interaction.ApplicationCommandData().Options[2].IntValue()
+
+			err := bot.Session.GuildBanCreateWithReason(interaction.GuildID, interaction.ApplicationCommandData().Options[0].UserValue(bot.Session).ID, reason, int(days))
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Error has occurred", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with banning member from guild: %s\n", err)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, interaction.ApplicationCommandData().Options[0].UserValue(bot.Session).Mention()+" is banned", interaction.Interaction)
+		},
+
+		"unban": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
+			err := bot.Session.GuildBanDelete(interaction.GuildID, interaction.ApplicationCommandData().Options[0].StringValue())
+			if err != nil {
+				interactions.SendAndDeleteInteraction(bot.Session, "Invalid id", interaction.Interaction, time.Second*5)
+				fmt.Printf("Error with banning member from guild: %s\n", err)
+				return
+			}
+			interactions.SendMessageInteraction(bot.Session, "<@"+interaction.ApplicationCommandData().Options[0].StringValue()+"> is unbanned", interaction.Interaction)
 		},
 	}
 )
