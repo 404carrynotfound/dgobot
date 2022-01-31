@@ -19,6 +19,7 @@ type Bot struct {
 	Session        *discordgo.Session
 }
 
+// RegisterNodes Registers a session for lava player
 func (b *Bot) RegisterNodes() {
 	secure, _ := strconv.ParseBool(os.Getenv("LAVALINK_SECURE"))
 	_, err := b.Link.AddNode(context.TODO(), lavalink.NodeConfig{
