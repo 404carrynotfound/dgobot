@@ -2,7 +2,7 @@ package main
 
 import "testing"
 
-// Checks if for every commands there's a function to handle that
+// Checks if for every command there's a function to handle that
 func TestCommands(t *testing.T) {
 	for _, command := range commands {
 		if commandHandlers[command.Name] == nil {
