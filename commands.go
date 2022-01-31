@@ -4,7 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var Commands = []*discordgo.ApplicationCommand{
+var commands = []*discordgo.ApplicationCommand{
 	{
 		Name:        "play",
 		Description: "Plays a song from YouTube",

@@ -46,7 +46,7 @@ func ready(session *discordgo.Session, _ *discordgo.Ready) {
 	if err != nil {
 		fmt.Printf("Can't set status, %s\n", err)
 	}
-	_, err = session.ApplicationCommandBulkOverwrite(session.State.User.ID, guildId, Commands)
+	_, err = session.ApplicationCommandBulkOverwrite(session.State.User.ID, guildId, commands)
 	if err != nil {
 		fmt.Printf("Error while loading slash commands: %s\n", err)
 	}

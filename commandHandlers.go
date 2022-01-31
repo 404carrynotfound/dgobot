@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var CommandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.InteractionCreate){
+var commandHandlers = map[string]func(bot *player.Bot, interaction *discordgo.InteractionCreate){
 	// Plays a song from spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 	"play": func(bot *player.Bot, interaction *discordgo.InteractionCreate) {
 		vc := findChannel(bot.Session, interaction.Interaction)

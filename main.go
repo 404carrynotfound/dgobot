@@ -51,7 +51,7 @@ func main() {
 
 	session.AddHandler(func(session *discordgo.Session, interaction *discordgo.InteractionCreate) {
 		if interaction.User == nil {
-			if handler, ok := CommandHandlers[interaction.ApplicationCommandData().Name]; ok {
+			if handler, ok := commandHandlers[interaction.ApplicationCommandData().Name]; ok {
 				handler(bot, interaction)
 			}
 		}
